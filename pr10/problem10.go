@@ -22,16 +22,22 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
 
-type seedRange struct {
+type interval struct {
 	start int
 	end int
 }
 
-func rangesOverlap(a seedRange, b seedRange) bool {
+type intervalPair struct {
+	src interval
+	dest interval
+}
+
+func rangesOverlap(a interval, b interval) bool {
 	if b.start < a.start  {
 		c := a
 		a = b
@@ -41,8 +47,31 @@ func rangesOverlap(a seedRange, b seedRange) bool {
 	return a.end > b.start
 }
 
+func union(a interval, b interval) interval {
+	if b.start < a.start  {
+		c := a
+		a = b
+		b = c
+	}
 
+	return interval{start:a.start, end:b.end}
+}
 
+func intersect(a interval, b interval) interval {
+	// Assumes intervals overlap
+	points := []int{}
+	points = append(points, a.start)
+	points = append(points, b.start)
+	points = append(points, a.end)
+	points = append(points, b.end)
+
+	sort.Slice(points, func(i, j int) bool {
+		return points[i] < points[j]
+	})
+
+	return interval{start:points[1], end:points[2]}
+}
+	
 func accessMap(theMap map[int][]int, yourKey int) int {
 	for src, v := range theMap {
 		dest := v[0]
@@ -71,6 +100,22 @@ func makeMap(lines []string) map[int][]int {
 	}
 
 	return outMap
+}
+
+func makeIntervalPair(lines []string) []intervalPair {
+	outPairs := []intervalPair{}
+	for _, line := range lines {
+		nums := strings.Split(strings.TrimSpace(line), " ")
+		dest, _ := strconv.Atoi(nums[0])
+		src, _ := strconv.Atoi(nums[1])
+		span, _ := strconv.Atoi(nums[2])
+
+		int1 := interval{start:src, end:src+span}
+		int2 := interval{start:dest, end:dest+span}
+		outPairs = append(outPairs, intervalPair{src:int1, dest:int2})
+	}
+
+	return outPairs
 }
 
 func makeMapTest() bool {
@@ -128,8 +173,10 @@ func main() {
 
 	var maps []map[int][]int
 	maps = make([]map[int][]int, 0)
+	pairs := []interval
 
 	seedNums := [][]int{}
+	seedInts := []interval{}
 
 	for scanner.Scan() {
 
@@ -150,6 +197,7 @@ func main() {
 				list = append(list, start)
 				list = append(list, span)
 				seedNums = append(seedNums, list)
+				seedInts = append(seedInts, interval{start:start, end:(start + span)})
 			}
 
 			row++
