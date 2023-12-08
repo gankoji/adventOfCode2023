@@ -26,6 +26,23 @@ import (
 	"strings"
 )
 
+type seedRange struct {
+	start int
+	end int
+}
+
+func rangesOverlap(a seedRange, b seedRange) bool {
+	if b.start < a.start  {
+		c := a
+		a = b
+		b = c
+	}
+
+	return a.end > b.start
+}
+
+
+
 func accessMap(theMap map[int][]int, yourKey int) int {
 	for src, v := range theMap {
 		dest := v[0]
