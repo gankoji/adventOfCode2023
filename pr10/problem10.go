@@ -102,7 +102,7 @@ func makeMap(lines []string) map[int][]int {
 	return outMap
 }
 
-func makeIntervalPair(lines []string) []intervalPair {
+func makeIntervalPairSlice(lines []string) []intervalPair {
 	outPairs := []intervalPair{}
 	for _, line := range lines {
 		nums := strings.Split(strings.TrimSpace(line), " ")
@@ -173,7 +173,7 @@ func main() {
 
 	var maps []map[int][]int
 	maps = make([]map[int][]int, 0)
-	pairs := []interval
+	pairs := [][]interval{}
 
 	seedNums := [][]int{}
 	seedInts := []interval{}
@@ -210,8 +210,8 @@ func main() {
 				continue
 			}
 
-			newMap := makeMap(mapBuffer)
-			maps = append(maps, newMap)
+			newPairSlice := makeIntervalPairSlice(mapBuffer)
+			pairs = append(pairs, newPairSlice)
 			mapBuffer = make([]string, 0)
 		} else if (len(strings.Split(line, ":")) > 1) {
 			continue
@@ -224,31 +224,12 @@ func main() {
 	}
 	
 	if len(mapBuffer) > 0 {
-		newMap := makeMap(mapBuffer)
-		maps = append(maps, newMap)
+		newPairSlice := makeIntervalPairSlice(mapBuffer)
+		pairs = append(pairs, newPairSlice)
 	}
 
-	minLocation := 1000000000000
-	for _, seedNumRange := range seedNums {
-		start := seedNumRange[0]
-		span := seedNumRange[1]
-		for i:= start; i < start + span; i++ {
-			seedNum := i
-			for _, theMap := range maps {
-				seedNum = accessMap(theMap, seedNum)
-			}
-			location := seedNum
-			if (location < minLocation) {
-				minLocation = location
-			}
-		}
-	}
 
-	if(makeMapTest()) {
-		fmt.Println("Tests passed.")
-	} else {
-		fmt.Println("Tests failed.")
-	}
+
 
 	fmt.Println("Minimum location: ", minLocation)
 
