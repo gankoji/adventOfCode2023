@@ -149,6 +149,11 @@ func minFind(arr []int) int {
 	return min
 }
 
+func transformInterval(a interval, pairList []intervalPair) []interval {
+	out := []interval{}
+	out = append(out, a)
+}
+
 func main() {
 	useExample := flag.Bool("example", false, "Whether to use the example input or the real problem input")
 	flag.Parse()
@@ -171,9 +176,7 @@ func main() {
 	var mapBuffer []string
 	mapBuffer = make([]string, 0)
 
-	var maps []map[int][]int
-	maps = make([]map[int][]int, 0)
-	pairs := [][]interval{}
+	pairs := [][]intervalPair{}
 
 	seedNums := [][]int{}
 	seedInts := []interval{}
@@ -228,9 +231,27 @@ func main() {
 		pairs = append(pairs, newPairSlice)
 	}
 
+	minLocation := 0
 
 
+	for _, pairList := range pairs {
+		tempIntervals := []interval{}
 
+		for _, interval := range seedInts {
+			// Apply the map to the interval and add to temp
+			outputInts := transformInterval(interval, pairList)
+			for _, out := range outputInts {
+				tempIntervals = append(tempIntervals, out)
+			}
+		}
+		seedInts = tempIntervals
+	}
+
+	sort.Slice(seedInts, func(i, j int) bool {
+		return seedInts[i].start < seedInts[j].start
+	}) 
+
+	minLocation = seedInts[0].start
 	fmt.Println("Minimum location: ", minLocation)
 
 }
