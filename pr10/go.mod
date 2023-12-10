@@ -1,3 +1,3 @@
-module gankoji.com/pr9/v2
+module pr10/v2
 
-go 1.15
+go 1.21.5

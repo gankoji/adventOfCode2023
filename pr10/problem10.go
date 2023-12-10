@@ -22,136 +22,53 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
+	"pr10/v2/intervals"
 	"strconv"
 	"strings"
 )
 
-type interval struct {
-	start int
-	end int
-}
-
 type intervalPair struct {
-	src interval
-	dest interval
+	src  intervals.Interval
+	dest intervals.Interval
 }
 
-func rangesOverlap(a interval, b interval) bool {
-	if b.start < a.start  {
-		c := a
-		a = b
-		b = c
+func makeIntervalPairSlice(buffer []string) []intervalPair {
+	out := []intervalPair{}
+
+	for _, line := range buffer {
+		numStr := strings.Split(strings.TrimSpace(line), " ")
+		dest, _ := strconv.Atoi(numStr[0])
+		src, _ := strconv.Atoi(numStr[1])
+		span, _ := strconv.Atoi(numStr[2])
+		srcInt := intervals.MakeInt(src, src+span)
+		destInt := intervals.MakeInt(dest, dest+span)
+		out = append(out, intervalPair{srcInt, destInt})
 	}
-
-	return a.end > b.start
+	return out
 }
 
-func union(a interval, b interval) interval {
-	if b.start < a.start  {
-		c := a
-		a = b
-		b = c
-	}
+func transformIntervalWithReplacementPairs(a intervals.Interval, pairs []intervalPair) []intervals.Interval {
+	out := []intervals.Interval{}
+	for _, intPair := range pairs {
+		inter := intervals.Intersect(a, intPair.src)
+		if !intervals.IsEmpty(inter) {
+			newInt := intervals.MakeInt(intPair.dest.Start, intPair.dest.Start + inter.Span)
+			out = append(out, newInt)
 
-	return interval{start:a.start, end:b.end}
-}
-
-func intersect(a interval, b interval) interval {
-	// Assumes intervals overlap
-	points := []int{}
-	points = append(points, a.start)
-	points = append(points, b.start)
-	points = append(points, a.end)
-	points = append(points, b.end)
-
-	sort.Slice(points, func(i, j int) bool {
-		return points[i] < points[j]
-	})
-
-	return interval{start:points[1], end:points[2]}
-}
-	
-func accessMap(theMap map[int][]int, yourKey int) int {
-	for src, v := range theMap {
-		dest := v[0]
-		span := v[1]
-		if (yourKey >= src) && (yourKey < (src + span)) {
-			delta := yourKey - src
-			return dest + delta
+			al := intervals.SetMinus(a, inter)
+			for _, leftover := range al {
+				if !intervals.IsEmpty(leftover) {
+					out = append(out, leftover)
+				}
+			}
+		} else {
+			out = append(out, a)
 		}
 	}
 
-	return yourKey
-}
+	out = intervals.SortIntervals(out)
 
-func makeMap(lines []string) map[int][]int {
-	var outMap map[int][]int
-	outMap = make(map[int][]int, 0)
-
-	for _, line := range lines {
-		nums := strings.Split(strings.TrimSpace(line), " ")
-		num1, _ := strconv.Atoi(nums[0])
-		num2, _ := strconv.Atoi(nums[1])
-		num3, _ := strconv.Atoi(nums[2])
-
-		outMap[num2] = append(outMap[num2], num1) 
-		outMap[num2] = append(outMap[num2], num3)
-	}
-
-	return outMap
-}
-
-func makeIntervalPairSlice(lines []string) []intervalPair {
-	outPairs := []intervalPair{}
-	for _, line := range lines {
-		nums := strings.Split(strings.TrimSpace(line), " ")
-		dest, _ := strconv.Atoi(nums[0])
-		src, _ := strconv.Atoi(nums[1])
-		span, _ := strconv.Atoi(nums[2])
-
-		int1 := interval{start:src, end:src+span}
-		int2 := interval{start:dest, end:dest+span}
-		outPairs = append(outPairs, intervalPair{src:int1, dest:int2})
-	}
-
-	return outPairs
-}
-
-func makeMapTest() bool {
-	exampleLine := "300 200 10"
-	exampleLines := []string{}
-	exampleLines = append(exampleLines, exampleLine)
-	newMap := makeMap(exampleLines)
-	fmt.Println(newMap)
-
-	val1 := accessMap(newMap, 200)
-	val2 := accessMap(newMap, 210)
-	if val1 != 300 {
-		fmt.Printf("Expected: 300, Got: %d\n", val1)
-		fmt.Println("Access start fails.")
-		return false
-	}
-	if val2 != 210 {
-		fmt.Println("Non-covered access fails.")
-		return false
-	}
-	return true
-}
-
-func minFind(arr []int) int {
-	min := arr[0]
-	for _, el := range arr {
-		if el < min {
-			min = el
-		}
-	}
-	return min
-}
-
-func transformInterval(a interval, pairList []intervalPair) []interval {
-	out := []interval{}
-	out = append(out, a)
+	return out
 }
 
 func main() {
@@ -166,7 +83,7 @@ func main() {
 
 	file, err := os.Open(fileStr)
 	if err != nil {
-	    log.Fatal(err)
+		log.Fatal(err)
 	}
 	defer file.Close()
 
@@ -176,10 +93,11 @@ func main() {
 	var mapBuffer []string
 	mapBuffer = make([]string, 0)
 
+	example := intervals.MakeInt(1,2)
+	fmt.Println(example)
 	pairs := [][]intervalPair{}
 
-	seedNums := [][]int{}
-	seedInts := []interval{}
+	seedInts := []intervals.Interval{}
 
 	for scanner.Scan() {
 
@@ -191,22 +109,18 @@ func main() {
 			parts := strings.Split(line, ":")
 			fmt.Println(parts)
 			seedNumStrs := strings.Split(strings.TrimSpace(parts[1]), " ")
-			for j:= 0; j < len(seedNumStrs); j += 2 {
+			for j := 0; j < len(seedNumStrs); j += 2 {
 				startStr := seedNumStrs[j]
 				spanStr := seedNumStrs[j+1]
 				start, _ := strconv.Atoi(startStr)
 				span, _ := strconv.Atoi(spanStr)
-				var list []int
-				list = append(list, start)
-				list = append(list, span)
-				seedNums = append(seedNums, list)
-				seedInts = append(seedInts, interval{start:start, end:(start + span)})
+				seedInts = append(seedInts, intervals.MakeInt(start, (start + span)))
 			}
 
 			row++
 			continue
 		}
-		
+
 		if line == "" {
 			if row == 1 {
 				row++
@@ -216,7 +130,7 @@ func main() {
 			newPairSlice := makeIntervalPairSlice(mapBuffer)
 			pairs = append(pairs, newPairSlice)
 			mapBuffer = make([]string, 0)
-		} else if (len(strings.Split(line, ":")) > 1) {
+		} else if len(strings.Split(line, ":")) > 1 {
 			continue
 		} else {
 			mapBuffer = append(mapBuffer, line)
@@ -225,7 +139,7 @@ func main() {
 		row++
 
 	}
-	
+
 	if len(mapBuffer) > 0 {
 		newPairSlice := makeIntervalPairSlice(mapBuffer)
 		pairs = append(pairs, newPairSlice)
@@ -233,26 +147,42 @@ func main() {
 
 	minLocation := 0
 
-
+	fmt.Println(len(seedInts))
 	for _, pairList := range pairs {
-		tempIntervals := []interval{}
+		fmt.Println("Pair list: ", pairList)
+		tempIntervals := []intervals.Interval{}
 
 		for _, interval := range seedInts {
 			// Apply the map to the interval and add to temp
-			outputInts := transformInterval(interval, pairList)
+			fmt.Println("New input interval: ", interval)
+			outputInts := transformIntervalWithReplacementPairs(interval, pairList)
+			fmt.Println("Output after transform: ", outputInts)
 			for _, out := range outputInts {
-				tempIntervals = append(tempIntervals, out)
+				if !intervals.IsEmpty(out) {
+					inTemp := false
+					for _, pr := range tempIntervals {
+						if  (pr.Start == out.Start) && (pr.End == out.End) {
+							inTemp = true
+						}
+					}
+					if len(tempIntervals) == 0 || !inTemp {
+						tempIntervals = append(tempIntervals, out)
+					}
+				}
 			}
+			fmt.Println("Temp intervals: ", tempIntervals)
 		}
-		seedInts = tempIntervals
+		tempIntervals = intervals.SortIntervals(tempIntervals)
+		seedInts = intervals.CompressOrderedSet(tempIntervals)
 	}
 
-	sort.Slice(seedInts, func(i, j int) bool {
-		return seedInts[i].start < seedInts[j].start
-	}) 
 
-	minLocation = seedInts[0].start
+	fmt.Println("Break")
+	fmt.Println(seedInts[0])
+	seedInts = intervals.SortIntervals(seedInts)
+	fmt.Println(seedInts[0])
+
+	minLocation = seedInts[0].Start
 	fmt.Println("Minimum location: ", minLocation)
 
 }
-
