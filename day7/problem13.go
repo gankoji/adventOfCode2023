@@ -32,7 +32,7 @@ var CardToValue = map[rune]int{
 	'8': 6,
 	'9': 7,
 	'T': 8,
-	'J': -1,
+	'J': 9,
 	'Q': 10,
 	'K': 11,
 	'A': 12,
@@ -67,29 +67,13 @@ func handHistogram(hand string) map[rune]int {
 func getQty(hist map[rune]int) []int {
 	out := []int{}
 
-	jokers := 0
-	for k, v := range hist {
+	for _, v := range hist {
 		if v > 0 {
-			if (k == 'J') {
-				// Treat jokers differently
-				jokers = v
-			} else {
-				out = append(out, v)
-			}
+			out = append(out, v)
 		}
 	}
 	sort.Ints(out)
 	slices.Reverse(out)
-	if len(out) > 0 {
-		a := out[0] + jokers
-		if a > 5 {
-			a = 5
-		}
-		out[0] = a
-	} else {
-		out = append(out, jokers)
-	}
-
 	return out
 }
 
