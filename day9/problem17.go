@@ -10,16 +10,21 @@ import (
 	"strings"
 )
 
-type Node struct {
-	children []string
-}
-
 func Sum(arr []int) int {
 	out := 0
 	for _, el := range arr {
 		out += el
 	}
 	return out
+}
+
+func ReadLines(filename string) []string {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return nil
+	}
+
+	return strings.Split(strings.TrimSpace(string(content)), "\n")
 }
 
 func getSeqFromLine(line string) []int {
@@ -33,14 +38,62 @@ func getSeqFromLine(line string) []int {
 
 func getDiffSeq(arr []int) []int {
 	out := []int{}
-	for i:= 1; i<len(arr); i++ {
-		out = append(out, arr[i] - arr[i-1])
+	for i := 1; i < len(arr); i++ {
+		out = append(out, arr[i]-arr[i-1])
 	}
 	return out
 }
 
 func allZeros(arr []int) bool {
-	return Sum(arr) == 0
+	for _, el := range arr {
+		if el != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func PredictNext(nums []int) int {
+	next := 0
+	cur := nums
+	for {
+		cur = getDiffSeq(cur)
+		if allZeros(cur) {
+			break
+		}
+		next += cur[len(cur)-1]
+	}
+	return nums[len(nums)-1] + next
+}
+
+func PredictPrev(nums []int) int {
+	cur := nums
+	sub := 0
+	mul := -1
+	for {
+		cur = getDiffSeq(cur)
+		if allZeros(cur) {
+			break
+		}
+		sub += cur[0] * mul
+		mul *= -1
+	}
+	return nums[0] + sub
+}
+
+func ParseNums(line string) []int {
+	nums := []int{}
+	for _, num := range strings.Split(line, " ") {
+		if num == "" {
+			continue
+		}
+		n, err := strconv.Atoi(strings.TrimSpace(num))
+		if err != nil {
+			panic(err)
+		}
+		nums = append(nums, n)
+	}
+	return nums
 }
 
 func main() {
@@ -61,47 +114,15 @@ func main() {
 
 	scanner := bufio.NewScanner(file)
 
-	inputSeqs := [][]int{}
+	part1_total := 0
+	part2_total := 0
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-
-		inputSeqs = append(inputSeqs, getSeqFromLine(line))
-
+		seq := ParseNums(line)
+		part1_total += PredictNext(seq)
+		part2_total += PredictPrev(seq)
 	}
 
-	sampleSeq := 131
-	fmt.Println(inputSeqs[sampleSeq])
-	nextElements := []int{}
-	for i, seq := range inputSeqs {
-		tempSeqs := [][]int{}
-		ogSeq := seq
-
-		// Build a 'stack' (list we'll access backwards)
-		// of the difference sequences until we hit 
-		// an all zero seq
-		for (len(seq) > 0) && !allZeros(seq) {
-			tempSeqs = append(tempSeqs, seq)
-			seq = getDiffSeq(seq)
-			if i == sampleSeq {
-				fmt.Println(seq)
-			}
-		}
-
-		difference := 0
-		for j:=len(tempSeqs)-1; j> 0; j-- {
-			// Now, we pop the stack and sum
-			delta := tempSeqs[j][len(tempSeqs[j])-1]
-			if i == sampleSeq {
-				fmt.Printf("Difference: %d, delta: %d, total: %d.\n", difference, delta, delta+difference)
-			}
-			difference += delta
-		}
-
-		nextElement := ogSeq[len(ogSeq)-1] + difference
-		nextElements = append(nextElements, nextElement)
-	}
-
-	fmt.Printf("The next element in the sample sequence is: %d.\n", nextElements[sampleSeq])
-	elSum := Sum(nextElements)
-	fmt.Printf("Sum of the next elements is %d.\n", elSum)
+	fmt.Printf("Sum of the next elements is %d.\n", part1_total)
+	fmt.Printf("Sum of the previous elements is %d.\n", part2_total)
 }
