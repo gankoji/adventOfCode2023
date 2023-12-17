@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func makeLengths(line string) []int {
@@ -147,6 +148,8 @@ func main() {
 		fileStr = "./input.txt"
 	}
 
+	start := time.Now()
+
 	lines := readInput(fileStr)
 	records, lengths := parseLinesToStrings(lines)
 
@@ -155,7 +158,9 @@ func main() {
 		l := lengths[i]
 		sum += matches(rec, l)
 	}
-	fmt.Println("Part 1: ", sum)
+	dur := time.Since(start)
+	fmt.Println("Part 1: ", sum, " took ", dur)
+	start = time.Now()
 
 	records = unfoldRecords(records)
 	lengths = unfoldLength(lengths)
@@ -164,6 +169,7 @@ func main() {
 		l := lengths[i]
 		sum += matches(rec, l)
 	}
-	fmt.Println("Part 2: ", sum)
+	dur = time.Since(start)
+	fmt.Println("Part 2: ", sum, " took ", dur)
 
 }
