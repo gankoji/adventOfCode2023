@@ -10,6 +10,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type hailstone struct {
@@ -110,7 +111,7 @@ func Sub(a, b [3]float64) [3]float64 {
 	return [3]float64{a[0] - b[0], a[1] - b[1], a[2] - b[2]}
 }
 
-func solvePart2(in []string) float64 {
+func solvePart2(in []string) int {
 
 	hailstones, err := parseEquations(in)
 
@@ -160,9 +161,7 @@ func solvePart2(in []string) float64 {
 
 	// The 1 Norm of a matrix/vector is the sum of elements
 	sum := P.Norm(1)
-	fmt.Println(sum)
-	fmt.Println(int(sum))
-	return sum
+	return int(sum)
 }
 
 func main() {
@@ -189,7 +188,16 @@ func main() {
 		input = append(input, line)
 	}
 
-	fmt.Println(getCrossedHailstones(input, 200000000000000.0, 400000000000000.0))
+	startTime := time.Now()
+	sum, _ := getCrossedHailstones(input, 200000000000000.0, 400000000000000.0)
+	endTime := time.Now()
+	fmt.Println("Answer to part 1: ", sum, ". Took", endTime.Sub(startTime), "to calculate.")
+	// About 1.5 ms on my desktop
 
-	solvePart2(input)
+	startTime = time.Now()
+	sum = solvePart2(input)
+	endTime = time.Now()
+	fmt.Println("Answer to part 2: ", sum, ". Took", endTime.Sub(startTime), "to calculate.")
+	// About 500 us on my desktop, Ryzen 7900X
+
 }
